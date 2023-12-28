@@ -7,10 +7,32 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
-// middlewares
+// >>>>>>>>>>>>>>>middlewares<<<<<<<<<<<<<<<<
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
+
+const verifyToken = (req, res, next) => {
+    try {
+        const token = req?.headers?.token;
+        console.log('from headers', token)
+        if (!token) {
+            return res?.status(401)?.send({ message: 'forbidden access' })
+        }
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+            if (err) {
+                return res.status(401).send({ message: 'forbidden access' })
+            }
+            else {
+                req.decoded = decoded;
+                next();
+            }
+        });
+    } catch (error) {
+        console.log(error)
+    }
+}
+// >>>>>>>>>>>>>>>middlewares<<<<<<<<<<<<<<<<
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mf3nl9y.mongodb.net/?retryWrites=true&w=majority`;
@@ -30,9 +52,21 @@ async function run() {
         await client.connect();
 
         // >>>>>>collections<<<<<<<<<<
-        const database = client.db("contestDB");
+        const database = client.db("commerceDB");
         const userCollection = database.collection("users");
         // >>>>>>collections<<<<<<<<<<
+
+        //  >>>>>>>>>>>>>>>>>>>>>>JWT related api<<<<<<<<<<<<<<
+        app.post('/jwt', async (req, res) => {
+            try {
+                const user = req.body;
+                const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '24h' });
+                res.send({ token })
+            } catch (error) {
+                console.log(error)
+            }
+        })
+        //  >>>>>>>>>>>>>>>>>>>>>>JWT related api<<<<<<<<<<<<<<
 
         //  >>>>>>>>>>>>>>>>>>>>>>users related api<<<<<<<<<<<<<<
         app.post('/users', async (req, res) => {
