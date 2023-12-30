@@ -175,6 +175,53 @@ async function run() {
       }
     });
 
+    // like functionality
+    app.put("/like/:id", async (req, res) => {
+      try {
+        const id = req?.params?.id;
+        const email = req?.query?.email;
+        const filter = { _id: new ObjectId(id) };
+        const product = await productCollection.findOne(filter);
+
+        const isExist = product?.likes.find((email) => email);
+        if (!isExist) {
+          product?.likes.push(email);
+        }
+
+        const updateDoc = {
+          $set: {
+            ...product,
+          },
+        };
+        const result = await productCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+    app.put("/disLike/:id", async (req, res) => {
+      try {
+        const id = req?.params?.id;
+        const email = req?.query?.email;
+        const filter = { _id: new ObjectId(id) };
+        const product = await productCollection.findOne(filter);
+
+        const newLikes = product?.likes?.filter(
+          (likedEmail) => likedEmail !== email
+        );
+        product?.likes.splice(0, product?.likes.length, ...newLikes);
+
+        const updateDoc = {
+          $set: {
+            ...product,
+          },
+        };
+        const result = await productCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
     //  >>>>>>>>>>>>>>>>>>>>>>product related api<<<<<<<<<<<<<<
 
     // Send a ping to confirm a successful connection
