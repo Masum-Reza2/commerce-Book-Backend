@@ -176,7 +176,7 @@ async function run() {
     });
 
     // like functionality
-    app.put("/like/:id", async (req, res) => {
+    app.put("/like/:id", verifyToken, async (req, res) => {
       try {
         const id = req?.params?.id;
         const email = req?.query?.email;
@@ -199,7 +199,7 @@ async function run() {
         console.log(error);
       }
     });
-    app.put("/disLike/:id", async (req, res) => {
+    app.put("/disLike/:id", verifyToken, async (req, res) => {
       try {
         const id = req?.params?.id;
         const email = req?.query?.email;
@@ -211,6 +211,27 @@ async function run() {
         );
         product?.likes.splice(0, product?.likes.length, ...newLikes);
 
+        const updateDoc = {
+          $set: {
+            ...product,
+          },
+        };
+        const result = await productCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    // comment functionality
+    app.put("/comment/:id", verifyToken, async (req, res) => {
+      try {
+        const id = req?.params?.id;
+        const comment = req?.body;
+        const filter = { _id: new ObjectId(id) };
+        const product = await productCollection.findOne(filter);
+        product?.comments.push(comment);
+        // console.log(comment, product);
         const updateDoc = {
           $set: {
             ...product,
