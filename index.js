@@ -175,6 +175,17 @@ async function run() {
       }
     });
 
+    app.get("/singleProduct/:id", async (req, res) => {
+      try {
+        const id = req?.params?.id;
+        const filter = { _id: new ObjectId(id) };
+        const result = await productCollection.findOne(filter);
+        res?.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
     // like functionality
     app.put("/like/:id", verifyToken, async (req, res) => {
       try {
@@ -232,6 +243,34 @@ async function run() {
         const product = await productCollection.findOne(filter);
         product?.comments.push(comment);
         // console.log(comment, product);
+        const updateDoc = {
+          $set: {
+            ...product,
+          },
+        };
+        const result = await productCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.delete("/deleteComments/:id", verifyToken, async (req, res) => {
+      try {
+        const id = req?.params?.id;
+        const email = req?.query?.email;
+
+        if (req?.decoded?.email !== email) {
+          return res?.status(401)?.send({ message: "forbidden access" });
+        }
+
+        const filter = { _id: new ObjectId(id) };
+        const product = await productCollection.findOne(filter);
+
+        const newComment = product?.comments?.filter(
+          (user) => user?.email !== email
+        );
+        product?.comments.splice(0, product?.comments?.length, ...newComment);
         const updateDoc = {
           $set: {
             ...product,
