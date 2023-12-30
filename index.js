@@ -180,14 +180,14 @@ async function run() {
       try {
         const id = req?.params?.id;
         const email = req?.query?.email;
+        console.log(email);
         const filter = { _id: new ObjectId(id) };
         const product = await productCollection.findOne(filter);
 
-        const isExist = product?.likes.find((email) => email);
-        if (!isExist) {
-          product?.likes.push(email);
-        }
-
+        // const isExist = product?.likes.find((email) => email);
+        // if (!isExist) {
+        // }
+        product?.likes.push(email);
         const updateDoc = {
           $set: {
             ...product,
