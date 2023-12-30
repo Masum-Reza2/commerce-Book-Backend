@@ -134,6 +134,47 @@ async function run() {
         console.log(error);
       }
     });
+
+    app.get("/productCount", async (req, res) => {
+      try {
+        const productCount = await productCollection.estimatedDocumentCount();
+        res?.send({ productCount });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.get("/products", async (req, res) => {
+      try {
+        const searchText = req?.query?.searchText;
+        const page = Number.parseFloat(req?.query?.page) || 1;
+        const size = Number.parseFloat(req?.query?.size) || 10;
+        const skip = (page - 1) * size;
+
+        if (searchText) {
+          const query = {
+            $or: [
+              { name: { $regex: searchText, $options: "i" } },
+              { ownerName: { $regex: searchText, $options: "i" } },
+            ],
+          };
+          const result =
+            (await productCollection
+              .find(query)
+              .skip(skip)
+              .limit(size)
+              .toArray()) || [];
+          return res.send(result);
+        }
+
+        let cursor = productCollection.find();
+        const result = (await cursor.skip(skip).limit(size).toArray()) || [];
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
     //  >>>>>>>>>>>>>>>>>>>>>>product related api<<<<<<<<<<<<<<
 
     // Send a ping to confirm a successful connection
