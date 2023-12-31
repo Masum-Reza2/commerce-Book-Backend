@@ -53,6 +53,7 @@ async function run() {
     const database = client.db("commerceDB");
     const userCollection = database.collection("users");
     const productCollection = database.collection("products");
+    const cartCollection = database.collection("carts");
     // >>>>>>collections<<<<<<<<<<
 
     // >>>>>>role verification<<<<<<<<<<
@@ -283,6 +284,52 @@ async function run() {
       }
     });
     //  >>>>>>>>>>>>>>>>>>>>>>product related api<<<<<<<<<<<<<<
+
+    //  >>>>>>>>>>>>>>>>>>>>>>cart related api<<<<<<<<<<<<<<
+    app.put("/addTocart", verifyToken, async (req, res) => {
+      try {
+        const cartProduct = req?.body;
+        const result = await cartCollection.insertOne(cartProduct);
+
+        // // update quantity after sell
+        const id = req?.body?.productId;
+        const filter = { _id: new ObjectId(id) };
+        const product = await productCollection.findOne(filter);
+        const updateDoc = {
+          $set: {
+            quantity: product?.quantity - 1,
+          },
+        };
+        await productCollection.updateOne(filter, updateDoc);
+
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.get("/cartnumber", verifyToken, async (req, res) => {
+      try {
+        const email = req?.query?.email;
+        const filter = { email: email };
+        const cartCount = await cartCollection.find(filter).toArray();
+        res?.send({ cartCount: cartCount?.length });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.get("/myCart/:email", verifyToken, async (req, res) => {
+      try {
+        const email = req?.params?.email;
+        const filter = { email: email };
+        const result = await cartCollection.find(filter).toArray();
+        res?.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+    //  >>>>>>>>>>>>>>>>>>>>>>cart related api<<<<<<<<<<<<<<
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
