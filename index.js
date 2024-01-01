@@ -324,6 +324,9 @@ async function run() {
     app.get("/myCart/:email", verifyToken, async (req, res) => {
       try {
         const email = req?.params?.email;
+        // if (req?.decoded?.email !== email) {
+        //   return res?.status(401)?.send({ message: "forbidden access" });
+        // }
         const filter = { email: email };
         const result = await cartCollection.find(filter).toArray();
         res?.send(result);
@@ -390,6 +393,17 @@ async function run() {
 
         const result = await paymentCollection.insertOne(paymentInfo);
         res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.get("/paymentHistory", verifyToken, async (req, res) => {
+      try {
+        const email = req?.query?.email;
+        const filter = { email: email };
+        const result = await paymentCollection.find(filter).toArray();
+        res?.send(result);
       } catch (error) {
         console.log(error);
       }
