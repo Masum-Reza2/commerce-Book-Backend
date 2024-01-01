@@ -6,6 +6,7 @@ require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // >>>>>>>>>>>>>>>middlewares<<<<<<<<<<<<<<<<
 app.use(cors());
@@ -329,7 +330,54 @@ async function run() {
         console.log(error);
       }
     });
+
+    app.delete("/removeCart", verifyToken, async (req, res) => {
+      try {
+        const cartId = req?.query?.cartId;
+        const productId = req?.query?.productId;
+
+        const cartFilter = { _id: new ObjectId(cartId) };
+        const result = await cartCollection.deleteOne(cartFilter);
+
+        const prodFilter = { _id: new ObjectId(productId) };
+        const product = await productCollection.findOne(prodFilter);
+        const updateDoc = {
+          $set: {
+            quantity: product?.quantity + 1,
+          },
+        };
+        await productCollection.updateOne(prodFilter, updateDoc);
+
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
     //  >>>>>>>>>>>>>>>>>>>>>>cart related api<<<<<<<<<<<<<<
+
+    // >>>>>>>>>>>>>>>>PAYMENT INTENT<<<<<<<<<<<<<<<<<<
+    app.post("/create-payment-intent", async (req, res) => {
+      try {
+        const { price } = req?.body;
+        const amount = parseInt(price * 100);
+
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+
+          // don't forget to add it
+          payment_method_types: ["card"],
+
+          currency: "usd",
+        });
+
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+    // >>>>>>>>>>>>>>>>PAYMENT INTENT<<<<<<<<<<<<<<<<<<
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
