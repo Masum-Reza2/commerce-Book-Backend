@@ -55,6 +55,7 @@ async function run() {
     const userCollection = database.collection("users");
     const productCollection = database.collection("products");
     const cartCollection = database.collection("carts");
+    const paymentCollection = database.collection("payments");
     // >>>>>>collections<<<<<<<<<<
 
     // >>>>>>role verification<<<<<<<<<<
@@ -373,6 +374,22 @@ async function run() {
         res.send({
           clientSecret: paymentIntent.client_secret,
         });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.post("/payments", async (req, res) => {
+      try {
+        const paymentInfo = req?.body;
+        const email = paymentInfo?.email;
+
+        // clearing user carts
+        const filter = { email: email };
+        await cartCollection.deleteMany(filter);
+
+        const result = await paymentCollection.insertOne(paymentInfo);
+        res.send(result);
       } catch (error) {
         console.log(error);
       }
