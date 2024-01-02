@@ -72,6 +72,20 @@ async function run() {
         console.log(error);
       }
     };
+
+    const verifyAdmin = async (req, res, next) => {
+      try {
+        const email = req?.decoded?.email;
+        const filter = { email: email };
+        const user = await userCollection.findOne(filter);
+        if (user?.role !== "admin") {
+          return res.status(403).send({ message: "unauthorized access" });
+        }
+        next();
+      } catch (error) {
+        console.log(error);
+      }
+    };
     // >>>>>>role verification<<<<<<<<<<
 
     //  >>>>>>>>>>>>>>>>>>>>>>JWT related api<<<<<<<<<<<<<<
@@ -404,6 +418,55 @@ async function run() {
         const filter = { email: email };
         const result = await paymentCollection.find(filter).toArray();
         res?.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.get("/userPayments", verifyToken, verifyAdmin, async (req, res) => {
+      try {
+        const options = {
+          sort: [["isDelivered", 1]],
+        };
+        const result = await paymentCollection.find({}, options).toArray();
+        res?.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.put(
+      "/deliverProduct/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req?.params?.id;
+          const filter = { _id: new ObjectId(id) };
+          const updateDoc = {
+            $set: {
+              isDelivered: true,
+            },
+          };
+          const result = await paymentCollection.updateOne(filter, updateDoc);
+          res.send(result);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    );
+
+    app.put("/receiveProduct/:id", verifyToken, async (req, res) => {
+      try {
+        const id = req?.params?.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            isReceived: true,
+          },
+        };
+        const result = await paymentCollection.updateOne(filter, updateDoc);
+        res.send(result);
       } catch (error) {
         console.log(error);
       }
