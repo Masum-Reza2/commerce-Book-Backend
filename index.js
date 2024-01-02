@@ -416,7 +416,10 @@ async function run() {
       try {
         const email = req?.query?.email;
         const filter = { email: email };
-        const result = await paymentCollection.find(filter).toArray();
+        const options = {
+          sort: [["isReceived", 1]],
+        };
+        const result = await paymentCollection.find(filter, options).toArray();
         res?.send(result);
       } catch (error) {
         console.log(error);
