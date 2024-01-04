@@ -133,6 +133,34 @@ async function run() {
         console.log(error);
       }
     });
+
+    app.put("/promotionRequest", verifyToken, async (req, res) => {
+      try {
+        const email = req?.query?.email;
+        console.log(email);
+        const filter = { email: email };
+        const updateDoc = {
+          $set: {
+            promotionRequest: true,
+          },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.get("/isRequested", async (req, res) => {
+      try {
+        const email = req?.query?.email;
+        const filter = { email: email };
+        const result = await userCollection.findOne(filter);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
     //  >>>>>>>>>>>>>>>>>>>>>>users related api<<<<<<<<<<<<<<
 
     //  >>>>>>>>>>>>>>>>>>>>>>product related api<<<<<<<<<<<<<<
