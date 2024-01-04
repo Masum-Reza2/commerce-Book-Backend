@@ -151,11 +151,59 @@ async function run() {
       }
     });
 
-    app.get("/isRequested", async (req, res) => {
+    app.get("/isRequested", verifyToken, async (req, res) => {
       try {
         const email = req?.query?.email;
         const filter = { email: email };
         const result = await userCollection.findOne(filter);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.get(
+      "/promotionRequests",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const filter = { promotionRequest: true };
+          const result = await userCollection.find(filter).toArray();
+          res?.send(result);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    );
+
+    app.put("/promoteUser", verifyToken, verifyAdmin, async (req, res) => {
+      try {
+        const email = req?.query?.email;
+        const filter = { email: email };
+        const updateDoc = {
+          $set: {
+            role: "seller",
+          },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    app.put("/demoteUser", verifyToken, verifyAdmin, async (req, res) => {
+      try {
+        const email = req?.query?.email;
+        const filter = { email: email };
+        const updateDoc = {
+          $set: {
+            role: "user",
+            promotionRequest: null,
+          },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
         res.send(result);
       } catch (error) {
         console.log(error);
